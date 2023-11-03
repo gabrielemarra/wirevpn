@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# Location to store the last used configuration
+LAST_CONFIG_FILE="/etc/wireguard/last_used_config"
+CONFIG_DIR="/etc/wireguard"
+
+
+# Function to connect to a WireGuard VPN
+function connect() {
+    local config=$1
+
+    # If no configuration is provided, use the last used configuration
+    if [[ -z $config ]]; then
+        if [[ -f $LAST_CONFIG_FILE ]]; then
+            config=$(cat $LAST_CONFIG_FILE) 2>/dev/null
+            if [[ -z $config ]]; then
+                echo "Failed to read last used configuration."
+                exit 1
+            fi
+        else
+            echo "No previous configuration found, and no configuration specified."
+            exit 1
+        fi
+    fi
+
+    # Attempt to bring up the WireGuard interface
+    echo "Connecting using configuration $config..."
+    sudo wg-quick up $config
+    if [[ $? -eq 0 ]]; then
+        echo $config | sudo tee $LAST_CONFIG_FILE >/dev/null
+        if [[ $? -eq 0 ]]; then
+            echo "Connection successful."
+        else
+            echo "Failed to save the last used configuration."
+        fi
+    else
+        echo "Failed to establish a connection."
+    fi
+}
+
+# Function to disconnect the current WireGuard VPN
+function disconnect() {
+    if [[ -f $LAST_CONFIG_FILE ]]; then
+        local config=$(cat $LAST_CONFIG_FILE)
+
+        echo "Disconnecting $config..."
+        sudo wg-quick down $config
+
+        if [[ $? -eq 0 ]]; then
+            echo "Disconnected successfully."
+        else
+            echo "Failed to disconnect."
+        fi
+    else
+        echo "No active WireGuard connection found."
+    fi
+}
+
+
+# Function to list the available WireGuard configurations
+function list_configs() {
+    local last_used=""
+    if [[ -f $LAST_CONFIG_FILE ]]; then
+        last_used=$(cat $LAST_CONFIG_FILE) 2>/dev/null
+    fi
+
+    echo "Available WireGuard configurations:"
+    local files=$(ls $CONFIG_DIR/*.conf)
+    for file in $files; do
+        local config_name=$(basename $file .conf)
+        if [[ $config_name == $last_used ]]; then
+            echo " * $config_name (last used, default)"
+        else
+            echo "   $config_name"
+        fi
+    done
+}
+
+# Function to display help text
+function show_help() {
+    echo "wirevpn - Simple WireGuard connection management script"
+    echo ""
+    echo "Usage:"
+    echo "  wirevpn {connect|c} [config_name]   Connect to a WireGuard VPN with the specified configuration."
+    echo "                                      If no configuration is specified, the last used configuration is applied."
+    echo "  wirevpn {disconnect|d}              Disconnect the current WireGuard VPN."
+    echo "  wirevpn list                        List available WireGuard configurations."
+    echo "  wirevpn help                        Show this help text."
+    echo ""
+    echo "The available commands are:"
+    echo "  connect (c)   : Connect to a VPN using a specified configuration file."
+    echo "  disconnect (d): Disconnect an active VPN connection."
+    echo "  list          : List all available VPN configurations and the last used configuration."
+    echo "  help          : Display this help information."
+}
+
+# Check if we're connecting, disconnecting, listing configurations, or displaying help
+case "$1" in
+    connect|c)
+        connect $2
+        ;;
+    disconnect|d)
+        disconnect
+        ;;
+    list|l)
+        list_configs
+        ;;
+    help|h|--help|-h)
+        show_help
+        ;;
+    *)
+        # If no arguments or an invalid command is given, show help.
+        if [[ $# -eq 0 ]]; then
+            show_help
+        else
+            echo "Invalid command. Type 'wirevpn --help' for usage instructions."
+        fi
+        exit 1
+        ;;
+esac
