@@ -67,7 +67,7 @@ function list_configs() {
     fi
 
     echo "Available WireGuard configurations:"
-    local files=$(ls $CONFIG_DIR/*.conf)
+    local files=$(ls $WG_DIR/*.conf)
     for file in $files; do
         local config_name=$(basename $file .conf)
         if [[ $config_name == $last_used ]]; then
