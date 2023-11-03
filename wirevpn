@@ -1,8 +1,10 @@
 #!/bin/bash
 
+# Base directory for WireGuard configurations
+WG_DIR="/etc/wireguard"
+
 # Location to store the last used configuration
-LAST_CONFIG_FILE="/etc/wireguard/last_used_config"
-CONFIG_DIR="/etc/wireguard"
+LAST_CONFIG_FILE="$WG_DIR/last_used_config"
 
 
 # Function to connect to a WireGuard VPN
