@@ -54,6 +54,3 @@ To manage your WireGuard connections, use the following commands:
 
 ## Support
 This script is a third-party tool and is not officially associated with the WireGuard project. Please ensure that you have a working WireGuard setup before using WireVPN.
-```
-
-The above markdown is structured to serve as a README file in a repository containing the WireVPN script. It begins with an overview, lists system requirements, provides clear installation instructions, and details how to use the script effectively.
